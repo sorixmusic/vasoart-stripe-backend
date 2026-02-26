@@ -1,35 +1,24 @@
-console.log("STRIPE_SECRET_KEY exists:", !!process.env.STRIPE_SECRET_KEY);
 import Stripe from "stripe";
-
-const ALLOWED_ORIGINS = new Set([
-  "https://vasoart.shop",
-  "http://localhost:5173", // optional pentru test
-]);
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 if (!STRIPE_SECRET_KEY) {
-  throw new Error("Missing STRIPE_SECRET_KEY in Vercel Environment Variables");
+  throw new Error("Missing STRIPE_SECRET_KEY in environment variables");
 }
 
-const stripe = new Stripe(STRIPE_SECRET_KEY, {
-  apiVersion: "2024-06-20",
-});
+const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2024-06-20" });
 
-function setCors(req, res) {
-  const origin = req.headers.origin || "";
-  if (ALLOWED_ORIGINS.has(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  } else {
-    // fallback safe
-    res.setHeader("Access-Control-Allow-Origin", "https://vasoart.shop");
-  }
-  res.setHeader("Vary", "Origin");
-  res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-}
+// Permite doar site-ul tău (și localhost dacă vrei)
+const allowedOrigins = new Set([
+  "https://vasoart.shop",
+  "http://localhost:5173",
+]);
 
 export default async function handler(req, res) {
-  setCors(req, res);
+  const origin = req.headers.origin || "";
+  if (allowedOrigins.has(origin)) res.setHeader("Access-Control-Allow-Origin", origin);
+  res.setHeader("Vary", "Origin");
+  res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
@@ -43,10 +32,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // IMPORTANT: Stripe cere integer în cents (ex: 199 = €1.99)
-    // Dacă vrei test gratis: pune 0 (dar Stripe poate refuza “0 amount” în unele cazuri)
-    const unitAmountCents = 199; // €1.99
-
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
@@ -55,7 +40,7 @@ export default async function handler(req, res) {
           price_data: {
             currency: "eur",
             product_data: { name: `Resource ${resourceId}` },
-            unit_amount: unitAmountCents,
+            unit_amount: 1, // ✅ €0.01 (1 cent)
           },
           quantity: 1,
         },
@@ -71,10 +56,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ url: session.url, sessionId: session.id });
   } catch (e) {
     console.error("create-pay-per-download error:", e);
-    return res.status(e?.statusCode || 500).json({
-      error: e?.message || e?.raw?.message || "Stripe error",
-      type: e?.type,
-      code: e?.code,
-    });
+    return res.status(500).json({ error: e?.message || "Stripe error" });
   }
 }
