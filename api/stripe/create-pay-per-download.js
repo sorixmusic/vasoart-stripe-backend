@@ -1,3 +1,4 @@
+console.log("STRIPE_SECRET_KEY exists:", !!process.env.STRIPE_SECRET_KEY);
 import Stripe from "stripe";
 
 const ALLOWED_ORIGINS = new Set([
