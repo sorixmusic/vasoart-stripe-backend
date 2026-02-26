@@ -44,7 +44,7 @@ export default async function handler(req, res) {
 
     // IMPORTANT: Stripe cere integer în cents (ex: 199 = €1.99)
     // Dacă vrei test gratis: pune 0 (dar Stripe poate refuza “0 amount” în unele cazuri)
-    const unitAmountCents = 199; // €1.99
+    const unitAmountCents = 001; // €0.01
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
