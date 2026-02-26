@@ -1,1 +1,7 @@
-
+{
+  "name": "vasoart-stripe-backend",
+  "private": true,
+  "dependencies": {
+    "stripe": "^14.0.0"
+  }
+}
