@@ -40,7 +40,7 @@ export default async function handler(req, res) {
           price_data: {
             currency: "eur",
             product_data: { name: `Resource ${resourceId}` },
-            unit_amount: 1, // ✅ €0.01 (1 cent)
+            unit_amount: 199, // ✅ €1.99 (1 cent)
           },
           quantity: 1,
         },
